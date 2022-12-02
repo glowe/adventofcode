@@ -3,11 +3,6 @@ use std::io;
 use std::collections::BinaryHeap;
 
 
-/// .
-///
-/// # Errors
-///
-/// This function will return an error if .
 fn main() -> io::Result<()> {
     let stdin = io::stdin();
     let mut heap = BinaryHeap::new();
