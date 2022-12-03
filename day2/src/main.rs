@@ -9,8 +9,6 @@ enum Shape {
     Scissors = 3,
 }
 
-// Implement an Err for FromStr Shape
-
 #[derive(Debug, Clone)]
 struct ParseShapeError {
     invalid: String,
