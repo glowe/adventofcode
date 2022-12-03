@@ -141,17 +141,14 @@ fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
         if n == 0 {
             break;
         }
-        match buf.trim_end().split_once(' ') {
-            Some((opponent_str, outcome_str)) => {
-                let opponent = opponent_str.parse::<Shape>()?;
-                let outcome = outcome_str.parse::<Outcome>()?;
-                let you = solve(opponent, outcome);
-                let round = Round::new(opponent, you);
-                total_score += round.score() as u32;
-            }
-            None => {
-                panic!("Couldn't parse {}", buf);
-            }
+        if let Some((opponent_str, outcome_str)) = buf.trim_end().split_once(' ') {
+            let opponent = opponent_str.parse::<Shape>()?;
+            let outcome = outcome_str.parse::<Outcome>()?;
+            let you = solve(opponent, outcome);
+            let round = Round::new(opponent, you);
+            total_score += round.score() as u32;
+        } else {
+            panic!("Couldn't parse {}", buf);
         }
     }
     println!("{}", total_score);
