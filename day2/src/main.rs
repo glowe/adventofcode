@@ -36,9 +36,6 @@ impl FromStr for Shape {
             "A" => Ok(Shape::Rock),
             "B" => Ok(Shape::Paper),
             "C" => Ok(Shape::Scissors),
-            "X" => Ok(Shape::Rock),
-            "Y" => Ok(Shape::Paper),
-            "Z" => Ok(Shape::Scissors),
             invalid => Err(ParseShapeError {
                 invalid: invalid.to_owned(),
             }),
@@ -52,12 +49,48 @@ enum Outcome {
     Draw = 3,
 }
 
+#[derive(Debug, Clone)]
+struct ParseOutcomeError {
+    invalid: String,
+}
+
+impl std::fmt::Display for ParseOutcomeError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "ParseOutcomeError {}", self.invalid)
+    }
+}
+
+impl std::error::Error for ParseOutcomeError {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        None
+    }
+}
+
+impl FromStr for Outcome {
+    type Err = ParseOutcomeError;
+
+    fn from_str(s: &str) -> result::Result<Self, Self::Err> {
+        match s {
+            "X" => Ok(Outcome::Loss),
+            "Y" => Ok(Outcome::Draw),
+            "Z" => Ok(Outcome::Win),
+            invalid => Err(ParseOutcomeError {
+                invalid: invalid.to_string(),
+            }),
+        }
+    }
+}
+
 struct Round {
     opponent: Shape,
     you: Shape,
 }
 
 impl Round {
+    fn new(opponent: Shape, you: Shape) -> Self {
+        Round { opponent, you }
+    }
+
     fn outcome(&self) -> Outcome {
         match (&self.opponent, &self.you) {
             (Shape::Rock, Shape::Rock) => Outcome::Draw,
@@ -83,44 +116,19 @@ impl Round {
     }
 }
 
-#[derive(Debug, Clone)]
-struct ParseRoundError {
-    source: ParseShapeError,
-}
-
-impl std::fmt::Display for ParseRoundError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "ParseRoundError")
-    }
-}
-
-impl std::error::Error for ParseRoundError {
-    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
-        Some(&self.source)
-    }
-}
-
-impl FromStr for Round {
-    type Err = ParseRoundError;
-
-    fn from_str(s: &str) -> result::Result<Self, Self::Err> {
-        let (opponent_str, you_str) = match s.split_once(' ') {
-            Some(parts) => parts,
-            None => {
-                return Err(ParseRoundError {
-                    source: ParseShapeError {
-                        invalid: s.to_string(),
-                    },
-                });
-            }
-        };
-        let opponent = opponent_str
-            .parse::<Shape>()
-            .map_err(|source| ParseRoundError { source })?;
-        let you = you_str
-            .parse::<Shape>()
-            .map_err(|source| ParseRoundError { source })?;
-        Ok(Round { opponent, you })
+fn solve(opponent: Shape, outcome: Outcome) -> Shape {
+    match outcome {
+        Outcome::Draw => opponent,
+        Outcome::Loss => match opponent {
+            Shape::Rock => Shape::Scissors,
+            Shape::Paper => Shape::Rock,
+            Shape::Scissors => Shape::Paper,
+        },
+        Outcome::Win => match opponent {
+            Shape::Rock => Shape::Paper,
+            Shape::Paper => Shape::Scissors,
+            Shape::Scissors => Shape::Rock,
+        },
     }
 }
 
@@ -133,8 +141,18 @@ fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
         if n == 0 {
             break;
         }
-        let round = buf.trim_end().parse::<Round>()?;
-        total_score += round.score() as u32;
+        match buf.trim_end().split_once(' ') {
+            Some((opponent_str, outcome_str)) => {
+                let opponent = opponent_str.parse::<Shape>()?;
+                let outcome = outcome_str.parse::<Outcome>()?;
+                let you = solve(opponent, outcome);
+                let round = Round::new(opponent, you);
+                total_score += round.score() as u32;
+            }
+            None => {
+                panic!("Couldn't parse {}", buf);
+            }
+        }
     }
     println!("{}", total_score);
     Ok(())
