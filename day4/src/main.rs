@@ -91,7 +91,7 @@ fn main() -> result::Result<(), Box<dyn error::Error>> {
             break;
         }
         let line = line.trim_end();
-        let (first_str, second_str) = line.split_once(',').unwrap();
+        let (first_str, second_str) = line.split_once(',').expect("Expected a comma-delimiter");
         let first = first_str.parse::<Assignment>()?;
         let second = second_str.parse::<Assignment>()?;
         if first.overlaps(&second) {
