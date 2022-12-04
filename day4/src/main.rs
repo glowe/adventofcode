@@ -33,6 +33,22 @@ struct ParseAssignmentError {
     source: Option<num::ParseIntError>,
 }
 
+impl ParseAssignmentError {
+    fn from_parse_int_error(input: String, int_error: num::ParseIntError) -> Self {
+        Self {
+            input,
+            source: Some(int_error),
+        }
+    }
+
+    fn from_str(input: String) -> Self {
+        Self {
+            input,
+            source: None,
+        }
+    }
+}
+
 impl fmt::Display for ParseAssignmentError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", self.input)
@@ -53,30 +69,15 @@ impl str::FromStr for Assignment {
 
     fn from_str(s: &str) -> result::Result<Self, Self::Err> {
         if let Some((start_str, end_str)) = s.split_once('-') {
-            let start = match start_str.parse::<u32>() {
-                Err(int_error) => {
-                    return Err(ParseAssignmentError {
-                        input: s.to_string(),
-                        source: Some(int_error),
-                    })
-                }
-                Ok(val) => val,
-            };
-            let end = match end_str.parse::<u32>() {
-                Err(int_error) => {
-                    return Err(ParseAssignmentError {
-                        input: s.to_string(),
-                        source: Some(int_error),
-                    })
-                }
-                Ok(val) => val,
-            };
+            let start = start_str.parse::<u32>().map_err(|int_error| {
+                ParseAssignmentError::from_parse_int_error(s.to_string(), int_error)
+            })?;
+            let end = end_str.parse::<u32>().map_err(|int_error| {
+                ParseAssignmentError::from_parse_int_error(s.to_string(), int_error)
+            })?;
             Ok(Self::new(start, end))
         } else {
-            return Err(ParseAssignmentError {
-                input: s.to_string(),
-                source: None,
-            });
+            return Err(ParseAssignmentError::from_str(s.to_string()));
         }
     }
 }
