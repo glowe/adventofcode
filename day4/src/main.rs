@@ -28,38 +28,33 @@ impl Assignment {
 }
 
 #[derive(Clone, Debug)]
-struct ParseAssignmentError {
-    input: String,
-    source: Option<num::ParseIntError>,
+enum ParseAssignmentError {
+    ParseIntError(num::ParseIntError),
+    MissingDelimiterError,
 }
 
-impl ParseAssignmentError {
-    fn from_parse_int_error(input: String, int_error: num::ParseIntError) -> Self {
-        Self {
-            input,
-            source: Some(int_error),
-        }
-    }
-
-    fn from_str(input: String) -> Self {
-        Self {
-            input,
-            source: None,
-        }
+impl From<num::ParseIntError> for ParseAssignmentError {
+    fn from(error: num::ParseIntError) -> Self {
+        ParseAssignmentError::ParseIntError(error)
     }
 }
 
 impl fmt::Display for ParseAssignmentError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.input)
+        match self {
+            Self::ParseIntError(int_error) => {
+                write!(f, "{}", int_error)
+            }
+            _ => write!(f, "ParseAssignmentError"),
+        }
     }
 }
 
 impl error::Error for ParseAssignmentError {
     fn source(&self) -> Option<&(dyn error::Error + 'static)> {
-        match &self.source {
-            Some(source) => Some(source),
-            None => None,
+        match self {
+            Self::ParseIntError(int_error) => Some(int_error),
+            _ => None,
         }
     }
 }
@@ -69,15 +64,11 @@ impl str::FromStr for Assignment {
 
     fn from_str(s: &str) -> result::Result<Self, Self::Err> {
         if let Some((start_str, end_str)) = s.split_once('-') {
-            let start = start_str.parse::<u32>().map_err(|int_error| {
-                ParseAssignmentError::from_parse_int_error(s.to_string(), int_error)
-            })?;
-            let end = end_str.parse::<u32>().map_err(|int_error| {
-                ParseAssignmentError::from_parse_int_error(s.to_string(), int_error)
-            })?;
+            let start = start_str.parse::<u32>()?;
+            let end = end_str.parse::<u32>()?;
             Ok(Self::new(start, end))
         } else {
-            return Err(ParseAssignmentError::from_str(s.to_string()));
+            return Err(ParseAssignmentError::MissingDelimiterError);
         }
     }
 }
