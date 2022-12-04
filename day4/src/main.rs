@@ -15,8 +15,15 @@ impl Assignment {
         Assignment { start, end }
     }
 
-    fn fully_contains(&self, other: &Assignment) -> bool {
-        other.start >= self.start && other.end <= self.end
+    fn contains(&self, other: &Assignment) -> bool {
+        self.start <= other.start && other.end <= self.end
+    }
+
+    fn overlaps(&self, other: &Assignment) -> bool {
+        self.contains(other)
+            || (self.start <= other.start && other.start <= self.end)
+            || (self.start <= other.end && other.end <= self.end)
+            || other.contains(&self)
     }
 }
 
@@ -87,7 +94,7 @@ fn main() -> result::Result<(), Box<dyn error::Error>> {
         let (first_str, second_str) = line.split_once(',').unwrap();
         let first = first_str.parse::<Assignment>()?;
         let second = second_str.parse::<Assignment>()?;
-        if first.fully_contains(&second) || second.fully_contains(&first) {
+        if first.overlaps(&second) {
             count += 1;
         }
     }
