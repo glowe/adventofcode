@@ -93,13 +93,13 @@ impl Move {
             return Err(MoveError::InvalidDestStack);
         }
 
-        for _ in 0..self.amount {
-            if let Some(crate_) = stacks[self.source - 1].pop() {
-                stacks[self.dest - 1].push(crate_);
-            } else {
-                return Err(MoveError::NotEnoughCrates);
-            }
+        let at = stacks[self.source - 1].len() - self.amount as usize;
+
+        let mut crates = stacks[self.source - 1].split_off(at);
+        if crates.len() != self.amount as usize {
+            return Err(MoveError::NotEnoughCrates);
         }
+        stacks[self.dest - 1].append(&mut crates);
         Ok(())
     }
 }
