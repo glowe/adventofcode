@@ -1,4 +1,4 @@
-use std::collections::HashSet;
+use std::collections::HashMap;
 use std::env;
 use std::error;
 use std::io;
@@ -16,16 +16,26 @@ fn main() -> result::Result<(), Box<dyn error::Error>> {
     let mut datastream = String::new();
     stdin.read_line(&mut datastream)?;
     let datastream = datastream.trim_end();
-    'out: for i in 0..datastream.len() - marker_size {
-        let mut set = HashSet::new();
-        for c in datastream[i..i + marker_size].chars() {
-            if set.contains(&c) {
-                continue 'out;
+    let mut seen = HashMap::new();
+
+    // Use a hashmap histogram windowed to the length of the marker and if its length
+    // matches the length of the marker then we know the characters are unique. Relying
+    // on HashMap::len() to be O(1) yields an overall runtime of O(n)
+    for (i, ch) in datastream.char_indices() {
+        if i >= marker_size {
+            let c = datastream.chars().nth(i - marker_size).unwrap();
+            let val = seen.get_mut(&c).unwrap();
+            *val -= 1;
+            if *val == 0 {
+                seen.remove(&c);
             }
-            set.insert(c);
         }
-        println!("{}", i + marker_size);
-        break;
+        let entry = seen.entry(ch).or_insert(0);
+        *entry += 1;
+        if seen.len() == marker_size {
+            println!("{}", i + 1);
+            break;
+        }
     }
     Ok(())
 }
