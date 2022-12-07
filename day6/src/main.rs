@@ -23,9 +23,12 @@ fn main() -> result::Result<(), Box<dyn error::Error>> {
     // on HashMap::len() to be O(1) yields an overall runtime of O(n)
     for (i, ch) in datastream.char_indices() {
         if i >= marker_size {
+            // Decrement an occurence of the character left adjecent to the left side of the window
             let c = datastream.chars().nth(i - marker_size).unwrap();
             let val = seen.get_mut(&c).unwrap();
             *val -= 1;
+            // ...and if occurences is 0, then remove the entry from the hashmap, so that its length
+            // will correspond to the number of unique characters seen in the window
             if *val == 0 {
                 seen.remove(&c);
             }
