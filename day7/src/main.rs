@@ -210,15 +210,13 @@ impl Parser {
     }
 }
 
-fn visit(directory: &Directory) -> u64 {
-    let mut size = 0;
-    if directory.size() <= 100000 {
-        size += directory.size();
+fn find_space(directory: &Directory, how_much: u64, candidates: &mut Vec<u64>) {
+    if directory.size() >= how_much {
+        candidates.push(directory.size());
     }
     for subdirectory in directory.directories.values() {
-        size += visit(subdirectory);
+        find_space(subdirectory, how_much, candidates);
     }
-    size
 }
 
 fn main() -> std::result::Result<(), Box<dyn Error>> {
@@ -228,7 +226,11 @@ fn main() -> std::result::Result<(), Box<dyn Error>> {
     let lexer = Lexer::new(input);
     let mut parser = Parser::new(lexer);
     let root = parser.parse()?;
-    //    println!("{:?}", root);
-    println!("{}", visit(&root));
+    let unused = 70_000_000 - root.size();
+    let atleast = 30_000_000 - unused;
+    let mut candidates = Vec::new();
+    find_space(&root, atleast, &mut candidates);
+    candidates.sort();
+    println!("{}", candidates.first().unwrap());
     Ok(())
 }
